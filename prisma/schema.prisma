@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              String         @id @default(cuid())
+  name            String?
+  email           String         @unique
+  password        String?
+  isTemporaryPassword Boolean    @default(false) @map("is_temporary_password")
+  emailVerified   DateTime?      @map("email_verified")
+  image           String?
+  lifetimeLicense   Boolean        @default(false) @map("lifetime_license")
+  plan              String         @default("free") @map("plan") // "free", "enem", "full"
+  licenseActivatedAt DateTime?     @map("license_activated_at")
+  currentDeviceId   String?        @map("current_device_id")// For anti-piracy single session tracking
+  onboardingCompleted Boolean      @default(false) @map("onboarding_completed")
+  track             String?        @map("track") // "enem" or "medicina"
+  level             String?        @map("level") // "1", "2", "3", "avancado"
+  dailyGoal         Int?           @map("daily_goal") // 10, 20, 50
+  
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  accounts        Account[]
+  sessions        Session[]
+  progress        ProgressEntry[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Model progress sync representation from local Dexie DB
+model ProgressEntry {
+  id                    String   @id @default(cuid())
+  questionId            String   @map("question_id")
+  userId                String   @map("user_id")
+  categoryKey           String   @map("category_key") // ex: "enem_1"
+  answeredAt            DateTime @map("answered_at")
+  isCorrect             Boolean  @map("is_correct")
+  selectedAlternativeId String   @map("selected_alternative_id")
+  timeSpentMs           Int?     @map("time_spent_ms")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@map("progress_entries")
+}
+
+// Chaves de ativação de licença — geradas pelo admin via Prisma Studio ou script
+model LicenseKey {
+  id           String    @id @default(cuid())
+  code         String    @unique
+  usedByEmail  String?   @map("used_by_email")
+  usedAt       DateTime? @map("used_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@map("license_keys")
+}
+
+// Tabela para garantir Idempotência do Webhook do Mercado Pago (processar 1 pagamento 1 única vez)
+model ProcessedTransaction {
+  id             String   @id @default(cuid())
+  transactionId  String   @unique @map("transaction_id")
+  status         String
+  processedAt    DateTime @default(now()) @map("processed_at")
+
+  @@map("processed_transactions")
+}

@@ -1,0 +1,6 @@
+{
+  "enem | avancado | Natureza": 945,
+  "enem | 1 | Natureza": 600,
+  "enem | 2 | Natureza": 600,
+  "enem | 3 | Natureza": 630
+}

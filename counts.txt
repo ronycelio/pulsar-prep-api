@@ -1,0 +1,9 @@
+{
+  "enem | avancado": 3780,
+  "enem | 1": 2800,
+  "enem | 2": 2400,
+  "enem | 3": 2520,
+  "vestibular | 1": 3580,
+  "vestibular | 3": 7559,
+  "vestibular | avancado": 5529
+}
