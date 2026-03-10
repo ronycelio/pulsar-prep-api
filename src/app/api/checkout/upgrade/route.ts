@@ -30,12 +30,19 @@ export async function POST(request: NextRequest) {
                     {
                         id: plan,
                         title: PLANS.upgrade.title,
+                        description: `Acesso à plataforma Pulsar Prep. Plano: ${PLANS.upgrade.title}`,
+                        picture_url: `${APP_URL}/favicon.ico`,
+                        category_id: "learnings",
                         quantity: 1,
                         unit_price: price,
                     },
                 ],
                 payer: {
                     email: session.user.email ?? "aluno@pulsarprep.shop",
+                },
+                // Configurações de pagamento (assegura débito/crédito à vista)
+                payment_methods: {
+                    default_installments: 1
                 },
                 statement_descriptor: "PULSARPREP",
                 // Passa o ID do usuário diretamente, o Webhook já identifica como UPDATE (FLUXO 2)

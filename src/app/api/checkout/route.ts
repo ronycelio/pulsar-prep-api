@@ -44,6 +44,9 @@ export async function POST(request: NextRequest) {
                     {
                         id: plan,
                         title: planConfig.title,
+                        description: `Acesso vitalício à plataforma de estudos Pulsar Prep. Plano: ${planConfig.title}`,
+                        picture_url: `${APP_URL}/favicon.ico`,
+                        category_id: "learnings",
                         quantity: 1,
                         unit_price: price,
                     },
@@ -51,6 +54,10 @@ export async function POST(request: NextRequest) {
                 // Informação do pagador exigida para Qualidade 100%
                 payer: {
                     email: email,
+                },
+                // Configurações de pagamento (assegura débito/crédito à vista)
+                payment_methods: {
+                    default_installments: 1
                 },
                 // Passa o e-mail real do aluno via external_reference
                 external_reference: `email:${email}`,
