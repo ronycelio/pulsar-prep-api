@@ -103,19 +103,48 @@ export async function POST(req: Request) {
                 let isNewUser = false;
                 let generatedPassword = "";
 
-                if (externalReference) {
-                    // FLUXO 1: Upgrade Interno (O aluno já estava logado e clicou em "Fazer Upgrade Agora")
+                if (externalReference?.startsWith("email:")) {
+                    // FLUXO 1: Venda via /comprar (e-mail capturado antes do MP)
+                    const emailFromRef = externalReference.replace("email:", "").trim();
+                    const existingUser = await prisma.user.findUnique({ where: { email: emailFromRef } });
+
+                    if (existingUser) {
+                        await prisma.user.update({
+                            where: { id: existingUser.id },
+                            data: { lifetimeLicense: true, plan, licenseActivatedAt: new Date() },
+                        });
+                        updatedCount = 1;
+                        console.log(`[WEBHOOK MP] Licença atualizada (captura). Email: ${emailFromRef}. Plano: ${plan}`);
+                    } else {
+                        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+                        let tempPass = "";
+                        for (let i = 0; i < 8; i++) tempPass += chars.charAt(Math.floor(Math.random() * chars.length));
+                        generatedPassword = `PP-${tempPass}`;
+                        const bcrypt = require("bcryptjs");
+                        const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+                        await prisma.user.create({
+                            data: {
+                                email: emailFromRef,
+                                name: payerName || "Aluno Prep",
+                                password: hashedPassword,
+                                isTemporaryPassword: true,
+                                lifetimeLicense: true,
+                                plan,
+                                licenseActivatedAt: new Date(),
+                            },
+                        });
+                        isNewUser = true;
+                        updatedCount = 1;
+                        console.log(`[WEBHOOK MP] Nova conta criada (captura). Email: ${emailFromRef}. Plano: ${plan}`);
+                    }
+                } else if (externalReference) {
+                    // FLUXO 2: Upgrade Interno (aluno logado no app clicou em "Fazer Upgrade")
                     const result = await prisma.user.updateMany({
                         where: { id: externalReference },
-                        data: {
-                            lifetimeLicense: true,
-                            plan: plan,
-                            licenseActivatedAt: new Date(),
-                        },
+                        data: { lifetimeLicense: true, plan, licenseActivatedAt: new Date() },
                     });
                     updatedCount = result.count;
-                    console.log(`[WEBHOOK MP] Aprovado via external_reference / Upgrade (ID: ${externalReference}). Plano: ${plan}, Updates: ${updatedCount}`);
-                } else if (payerEmail) {
+                    console.log(`[WEBHOOK MP] Upgrade interno (ID: ${externalReference}). Plano: ${plan}, Updates: ${updatedCount}`);
                     // FLUXO 2: Venda na Landing Page (O aluno nunca entrou no app, clicou no link público)
                     // Verifica se o usuário já existe
                     const existingUser = await prisma.user.findUnique({
