@@ -102,12 +102,14 @@ export async function POST(req: Request) {
                 let updatedCount = 0;
                 let isNewUser = false;
                 let generatedPassword = "";
+                let accountEmail = ""; // E-mail real que vai receber o boas-vindas
 
                 if (externalReference?.startsWith("email:")) {
                     // FLUXO 1: Venda via /comprar (e-mail capturado antes do MP)
                     const emailFromRef = externalReference.replace("email:", "").trim();
                     const existingUser = await prisma.user.findUnique({ where: { email: emailFromRef } });
 
+                    accountEmail = emailFromRef; // ← e-mail real capturado na nossa página
                     if (existingUser) {
                         await prisma.user.update({
                             where: { id: existingUser.id },
@@ -146,6 +148,7 @@ export async function POST(req: Request) {
                     updatedCount = result.count;
                     console.log(`[WEBHOOK MP] Upgrade interno (ID: ${externalReference}). Plano: ${plan}, Updates: ${updatedCount}`);
                 } else if (payerEmail) {
+                    accountEmail = payerEmail; // ← e-mail do MP (fallback)
                     // FLUXO 3: Fallback — sem external_reference, usa e-mail do MP (pode ser mascarado em sandbox)
                     const existingUser = await prisma.user.findUnique({ where: { email: payerEmail } });
                     if (existingUser) {
@@ -178,18 +181,16 @@ export async function POST(req: Request) {
                     }
                 }
 
-                if (payerEmail && updatedCount > 0) {
-                    // Valida formato básico de e-mail (pra evitar crash do Resend com dados de sandbox inválidos)
+                if (accountEmail && updatedCount > 0) {
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailRegex.test(payerEmail)) {
-                        console.error(`[WEBHOOK MP] Ignorando envio de e-mail. Formato de e-mail inválido recebido do MP Sandbox: "${payerEmail}"`);
+                    if (!emailRegex.test(accountEmail)) {
+                        console.error(`[WEBHOOK MP] Ignorando envio de e-mail. E-mail inválido: "${accountEmail}"`);
                     } else {
-                        // Dispara e-mail de boas-vindas após ativar/criar
                         try {
                             const passwordToSend = isNewUser ? generatedPassword : undefined;
-                            await sendWelcomeEmail(payerEmail, payerName, plan, passwordToSend);
+                            await sendWelcomeEmail(accountEmail, payerName, plan, passwordToSend);
+                            console.log(`[WEBHOOK MP] ✅ E-mail de boas-vindas enviado para: ${accountEmail}`);
                         } catch (emailErr) {
-                            // Não travar o webhook por falha de e-mail
                             console.error("[WEBHOOK MP] Falha ao enviar e-mail:", emailErr);
                         }
                     }
