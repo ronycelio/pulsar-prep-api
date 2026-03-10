@@ -145,39 +145,23 @@ export async function POST(req: Request) {
                     });
                     updatedCount = result.count;
                     console.log(`[WEBHOOK MP] Upgrade interno (ID: ${externalReference}). Plano: ${plan}, Updates: ${updatedCount}`);
-                    // FLUXO 2: Venda na Landing Page (O aluno nunca entrou no app, clicou no link público)
-                    // Verifica se o usuário já existe
-                    const existingUser = await prisma.user.findUnique({
-                        where: { email: payerEmail }
-                    });
-
+                } else if (payerEmail) {
+                    // FLUXO 3: Fallback — sem external_reference, usa e-mail do MP (pode ser mascarado em sandbox)
+                    const existingUser = await prisma.user.findUnique({ where: { email: payerEmail } });
                     if (existingUser) {
-                        // Se já tem cadastro com esse e-mail (ex: tentou logar antes de comprar), só atualiza a licença
                         await prisma.user.update({
                             where: { id: existingUser.id },
-                            data: {
-                                lifetimeLicense: true,
-                                plan: plan,
-                                licenseActivatedAt: new Date(),
-                            },
+                            data: { lifetimeLicense: true, plan, licenseActivatedAt: new Date() },
                         });
                         updatedCount = 1;
-                        console.log(`[WEBHOOK MP] Aprovado E-mail Existente (${payerEmail}). Plano: ${plan}`);
+                        console.log(`[WEBHOOK MP] Licença atualizada (fallback). Email: ${payerEmail}. Plano: ${plan}`);
                     } else {
-                        // O coração do Funil Desktop M1: Cria a conta automaticamente e gera a senha "Chave de Ativação"
                         isNewUser = true;
-
-                        // Função simples para gerar senha segura aleatória
                         const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-                        for (let i = 0; i < 8; i++) {
-                            generatedPassword += chars.charAt(Math.floor(Math.random() * chars.length));
-                        }
-                        // Força um prefixo para ficar com "cara de chave de licença"
+                        for (let i = 0; i < 8; i++) generatedPassword += chars.charAt(Math.floor(Math.random() * chars.length));
                         generatedPassword = `PP-${generatedPassword}`;
-
                         const bcrypt = require("bcryptjs");
                         const hashedPassword = await bcrypt.hash(generatedPassword, 10);
-
                         await prisma.user.create({
                             data: {
                                 email: payerEmail,
@@ -185,12 +169,12 @@ export async function POST(req: Request) {
                                 password: hashedPassword,
                                 isTemporaryPassword: true,
                                 lifetimeLicense: true,
-                                plan: plan,
+                                plan,
                                 licenseActivatedAt: new Date(),
-                            }
+                            },
                         });
                         updatedCount = 1;
-                        console.log(`[WEBHOOK MP] Nova Conta Criada via Pagamento: (${payerEmail}). Plano: ${plan}`);
+                        console.log(`[WEBHOOK MP] Nova conta criada (fallback). Email: ${payerEmail}. Plano: ${plan}`);
                     }
                 }
 
