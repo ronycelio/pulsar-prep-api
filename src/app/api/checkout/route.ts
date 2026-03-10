@@ -53,11 +53,11 @@ export async function POST(request: NextRequest) {
                 external_reference: `email:${email}`,
                 notification_url: `${APP_URL}/api/webhooks/mercadopago`,
                 back_urls: {
-                    success: `${APP_URL}/login?checkout=success`,
-                    failure: `${APP_URL}/login?checkout=failure`,
-                    pending: `${APP_URL}/login?checkout=pending`,
+                    success: `${APP_URL}/obrigado`,
+                    failure: `${APP_URL}/comprar?error=failure`,
+                    pending: `${APP_URL}/obrigado?status=pending`,
                 },
-                ...(isTestMode ? {} : { auto_return: "approved" }),
+                auto_return: "approved",
             },
         });
 

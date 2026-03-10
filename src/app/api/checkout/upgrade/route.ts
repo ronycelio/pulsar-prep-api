@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
                     failure: `${APP_URL}/dashboard?upgrade=failure`,
                     pending: `${APP_URL}/dashboard?upgrade=pending`,
                 },
-                ...(isTestMode ? {} : { auto_return: "approved" }),
+                auto_return: "approved",
             },
         });
 
