@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 export function UpgradeButton({ userId }: { userId?: string }) {
     const [isLoading, setIsLoading] = useState(false);
     const [isSent, setIsSent] = useState(false);
+    const [mpWindowRef, setMpWindowRef] = useState<Window | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -18,6 +19,9 @@ export function UpgradeButton({ userId }: { userId?: string }) {
                 const data = await res.json();
                 if (data.status === "approved") {
                     clearInterval(interval);
+                    if (mpWindowRef && !mpWindowRef.closed) {
+                        mpWindowRef.close();
+                    }
                     window.location.href = "/obrigado";
                 }
             } catch (err) {
@@ -26,7 +30,7 @@ export function UpgradeButton({ userId }: { userId?: string }) {
         }, 3000);
 
         return () => clearInterval(interval);
-    }, [isSent, userId]);
+    }, [isSent, userId, mpWindowRef]);
 
     async function handleUpgrade() {
         setIsLoading(true);
@@ -38,6 +42,7 @@ export function UpgradeButton({ userId }: { userId?: string }) {
                     <body><h2>Redirecionando de forma segura para o Mercado Pago...</h2></body>
                 </html>
             `);
+            setMpWindowRef(mpTab);
         }
 
         try {
@@ -50,16 +55,19 @@ export function UpgradeButton({ userId }: { userId?: string }) {
                 if (mpTab) {
                     mpTab.location.href = data.url;
                 } else {
-                    window.open(data.url, "_blank");
+                    const newTab = window.open(data.url, "_blank");
+                    setMpWindowRef(newTab);
                 }
                 setIsSent(true);
             } else {
                 if (mpTab) mpTab.close();
+                setMpWindowRef(null);
                 alert("Erro ao gerar link de pagamento. Tente novamente.");
                 setIsLoading(false);
             }
         } catch {
             if (mpTab) mpTab.close();
+            setMpWindowRef(null);
             alert("Erro de conexão. Tente novamente.");
             setIsLoading(false);
         }

@@ -34,6 +34,10 @@ export async function POST(request: NextRequest) {
                         unit_price: price,
                     },
                 ],
+                payer: {
+                    email: session.user.email ?? "aluno@pulsarprep.shop",
+                },
+                statement_descriptor: "PULSARPREP",
                 // Passa o ID do usuário diretamente, o Webhook já identifica como UPDATE (FLUXO 2)
                 external_reference: session.user.id,
                 notification_url: `${APP_URL}/api/webhooks/mercadopago`,

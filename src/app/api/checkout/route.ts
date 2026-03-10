@@ -48,9 +48,14 @@ export async function POST(request: NextRequest) {
                         unit_price: price,
                     },
                 ],
+                // Informação do pagador exigida para Qualidade 100%
+                payer: {
+                    email: email,
+                },
                 // Passa o e-mail real do aluno via external_reference
-                // O webhook vai usar isso para criar a conta com o e-mail correto
                 external_reference: `email:${email}`,
+                // Como vai aparecer na fatura do cartão
+                statement_descriptor: "PULSARPREP",
                 notification_url: `${APP_URL}/api/webhooks/mercadopago`,
                 back_urls: {
                     success: `${APP_URL}/obrigado`,

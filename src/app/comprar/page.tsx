@@ -34,6 +34,7 @@ function ComprarForm() {
     const [error, setError] = useState<string | null>(null);
     const [showSpamWarning, setShowSpamWarning] = useState(false);
     const [isSentToMercadoPago, setIsSentToMercadoPago] = useState(false);
+    const [mpWindowRef, setMpWindowRef] = useState<Window | null>(null);
 
     // Polling effect
     useEffect(() => {
@@ -45,6 +46,9 @@ function ComprarForm() {
                 const data = await res.json();
                 if (data.status === "approved") {
                     clearInterval(interval);
+                    if (mpWindowRef && !mpWindowRef.closed) {
+                        mpWindowRef.close();
+                    }
                     window.location.href = "/obrigado";
                 }
             } catch (err) {
@@ -53,7 +57,7 @@ function ComprarForm() {
         }, 3000);
 
         return () => clearInterval(interval);
-    }, [isSentToMercadoPago, email]);
+    }, [isSentToMercadoPago, email, mpWindowRef]);
 
     async function proceedToPayment() {
         setIsLoading(true);
@@ -67,6 +71,7 @@ function ComprarForm() {
                     <body><h2>Redirecionando de forma segura para o Mercado Pago...</h2></body>
                 </html>
             `);
+            setMpWindowRef(mpTab);
         }
 
         try {
@@ -82,17 +87,20 @@ function ComprarForm() {
                 if (mpTab) {
                     mpTab.location.href = data.url;
                 } else {
-                    window.open(data.url, "_blank");
+                    const newTab = window.open(data.url, "_blank");
+                    setMpWindowRef(newTab);
                 }
                 setShowSpamWarning(false);
                 setIsSentToMercadoPago(true);
             } else {
                 if (mpTab) mpTab.close();
+                setMpWindowRef(null);
                 setError("Erro ao gerar link de pagamento. Tente novamente.");
                 setIsLoading(false);
             }
         } catch {
             if (mpTab) mpTab.close();
+            setMpWindowRef(null);
             setError("Erro de conexão. Tente novamente.");
             setIsLoading(false);
         }
