@@ -37,7 +37,6 @@ function ComprarForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isSentToMercadoPago, setIsSentToMercadoPago] = useState(false);
-    const [mpWindowRef, setMpWindowRef] = useState<Window | null>(null);
 
     // Polling effect
     useEffect(() => {
@@ -45,13 +44,10 @@ function ComprarForm() {
 
         const interval = setInterval(async () => {
             try {
-                const res = await fetch(`/api/checkout/status?email=${encodeURIComponent(email)}`);
+                const res = await fetch(`/api/checkout/status?email=${encodeURIComponent(email)}&plan=${encodeURIComponent(plan)}`);
                 const data = await res.json();
                 if (data.status === "approved") {
                     clearInterval(interval);
-                    if (mpWindowRef && !mpWindowRef.closed) {
-                        mpWindowRef.close();
-                    }
                     window.location.href = "/obrigado";
                 }
             } catch (err) {
@@ -60,7 +56,7 @@ function ComprarForm() {
         }, 3000);
 
         return () => clearInterval(interval);
-    }, [isSentToMercadoPago, email, mpWindowRef]);
+    }, [isSentToMercadoPago, email, plan]);
 
     async function proceedToPayment(e?: React.FormEvent) {
         if (e) e.preventDefault();
@@ -82,7 +78,6 @@ function ComprarForm() {
                     <body><h2>Redirecionando de forma segura para o Mercado Pago...</h2></body>
                 </html>
             `);
-            setMpWindowRef(mpTab);
         }
 
         try {
@@ -98,19 +93,16 @@ function ComprarForm() {
                 if (mpTab) {
                     mpTab.location.href = data.url;
                 } else {
-                    const newTab = window.open(data.url, "_blank");
-                    setMpWindowRef(newTab);
+                    window.open(data.url, "_blank");
                 }
                 setIsSentToMercadoPago(true);
             } else {
                 if (mpTab) mpTab.close();
-                setMpWindowRef(null);
                 setError("Erro ao gerar link de pagamento. Tente novamente.");
                 setIsLoading(false);
             }
         } catch {
             if (mpTab) mpTab.close();
-            setMpWindowRef(null);
             setError("Erro de conexão. Tente novamente.");
             setIsLoading(false);
         }
