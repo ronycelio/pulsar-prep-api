@@ -38,26 +38,6 @@ function ComprarForm() {
     const [error, setError] = useState<string | null>(null);
     const [isSentToMercadoPago, setIsSentToMercadoPago] = useState(false);
 
-    // Polling effect
-    useEffect(() => {
-        if (!isSentToMercadoPago || !email) return;
-
-        const interval = setInterval(async () => {
-            try {
-                const res = await fetch(`/api/checkout/status?email=${encodeURIComponent(email)}&plan=${encodeURIComponent(plan)}`);
-                const data = await res.json();
-                if (data.status === "approved") {
-                    clearInterval(interval);
-                    window.location.href = "/obrigado";
-                }
-            } catch (err) {
-                console.error("Erro ao verificar status da compra:", err);
-            }
-        }, 3000);
-
-        return () => clearInterval(interval);
-    }, [isSentToMercadoPago, email, plan]);
-
     async function proceedToPayment(e?: React.FormEvent) {
         if (e) e.preventDefault();
         
@@ -69,16 +49,7 @@ function ComprarForm() {
 
         setIsLoading(true);
         setError(null);
-
-        // Abre a aba vazia imediatamente para não ser bloqueada pelo navegador
-        const mpTab = window.open("about:blank", "_blank");
-        if (mpTab) {
-            mpTab.document.write(`
-                <html style="background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
-                    <body><h2>Redirecionando de forma segura para o Mercado Pago...</h2></body>
-                </html>
-            `);
-        }
+        setIsSentToMercadoPago(true);
 
         try {
             const res = await fetch("/api/checkout", {
@@ -90,21 +61,17 @@ function ComprarForm() {
             const data = await res.json();
 
             if (data.url) {
-                if (mpTab) {
-                    mpTab.location.href = data.url;
-                } else {
-                    window.open(data.url, "_blank");
-                }
-                setIsSentToMercadoPago(true);
+                // Redireciona a janela atual para o Mercado Pago
+                window.location.href = data.url;
             } else {
-                if (mpTab) mpTab.close();
                 setError("Erro ao gerar link de pagamento. Tente novamente.");
                 setIsLoading(false);
+                setIsSentToMercadoPago(false);
             }
         } catch {
-            if (mpTab) mpTab.close();
             setError("Erro de conexão. Tente novamente.");
             setIsLoading(false);
+            setIsSentToMercadoPago(false);
         }
     }
 
@@ -120,27 +87,10 @@ function ComprarForm() {
 
                 <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-slate-900/80 backdrop-blur-sm p-8 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-500">
                     <Loader2 className="w-12 h-12 text-amber-500 animate-spin mb-6" />
-                    <h2 className="text-2xl font-bold text-white mb-3">Aguardando Pagamento</h2>
+                    <h2 className="text-2xl font-bold text-white mb-3">Redirecionando...</h2>
                     <p className="text-slate-300 text-sm mb-6 leading-relaxed">
-                        Uma nova guia do Mercado Pago foi aberta para você concluir sua compra de forma segura.
+                        Você está sendo levado para o ambiente seguro do Mercado Pago.
                     </p>
-
-                    <div className="bg-amber-950/40 border border-amber-500/20 rounded-lg p-4 w-full text-left mb-6">
-                        <p className="text-amber-400 text-sm font-medium">
-                            ⚠️ Não feche esta tela! Ela será atualizada automaticamente assim que o seu pagamento via PIX ou Cartão for confirmado pelo Mercado Pago.
-                        </p>
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setIsSentToMercadoPago(false);
-                            setIsLoading(false);
-                        }}
-                        className="text-sm underline text-slate-500 hover:text-white transition-colors"
-                    >
-                        Cancelar ou tentar novamente
-                    </button>
                 </div>
             </div>
         );
