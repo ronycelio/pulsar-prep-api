@@ -10,8 +10,8 @@ import crypto from "crypto";
  */
 function validateMpSignature(req: Request, rawBody: string): boolean {
     const secret = process.env.MP_WEBHOOK_SECRET;
-    if (!secret) {
-        // Se não tiver secret configurado, logar aviso mas não bloquear (dev/staging)
+    if (!secret || secret.trim() === "") {
+        // Se não tiver secret configurado (ou vazio), logar aviso mas não bloquear (dev/staging)
         console.warn("[WEBHOOK MP] MP_WEBHOOK_SECRET não configurado — pulando validação HMAC.");
         return true;
     }

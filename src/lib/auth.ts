@@ -24,6 +24,7 @@ declare module "next-auth" {
 export const authOptions: NextAuthConfig = {
     adapter: PrismaAdapter(prisma),
     session: { strategy: "jwt" },
+    trustHost: true, // Necessário para produção atrás de proxy reverso (Easypanel/Nginx)
     pages: {
         signIn: "/login",
     },
