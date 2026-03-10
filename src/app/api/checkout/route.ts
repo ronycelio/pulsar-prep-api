@@ -16,9 +16,9 @@ export async function GET(request: Request) {
     }
 
     const APP_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
-    const isLocalhost = APP_URL.includes("localhost");
+    const isTestMode = APP_URL.includes("localhost") || process.env.MP_TEST_MODE === "true";
     const planConfig = PLANS[plan];
-    const price = isLocalhost ? planConfig.test : planConfig.real;
+    const price = isTestMode ? planConfig.test : planConfig.real;
 
     const client = new MercadoPagoConfig({
         accessToken: process.env.MP_ACCESS_TOKEN ?? "",
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
                     failure: `${APP_URL}/login?checkout=failure`,
                     pending: `${APP_URL}/login?checkout=pending`,
                 },
-                ...(isLocalhost ? {} : { auto_return: "approved" }),
+                ...(isTestMode ? {} : { auto_return: "approved" }),
             },
         });
 
