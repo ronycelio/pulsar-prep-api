@@ -6,10 +6,47 @@ import { useRouter } from "next/navigation";
 
 export function UpgradeButton({ userId }: { userId?: string }) {
     const [isLoading, setIsLoading] = useState(false);
+    const [isSent, setIsSent] = useState(false);
+    const [mpWindowRef, setMpWindowRef] = useState<Window | null>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        if (!isSent || !userId) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/checkout/status?userId=${userId}&_t=${Date.now()}`, {
+                    cache: 'no-store'
+                });
+                const data = await res.json();
+                if (data.status === "approved") {
+                    clearInterval(interval);
+                    if (mpWindowRef && !mpWindowRef.closed) {
+                        mpWindowRef.close();
+                    }
+                    window.location.href = "/obrigado";
+                }
+            } catch (err) {
+                console.error("Erro ao verificar status", err);
+            }
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [isSent, userId, mpWindowRef]);
 
     async function handleUpgrade() {
         setIsLoading(true);
+
+        // Abre a aba vazia imediatamente para não ser bloqueada pelo navegador
+        const mpTab = window.open("about:blank", "_blank");
+        if (mpTab) {
+            mpTab.document.write(`
+                <html style="background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; text-align: center;">
+                    <body><h2>Redirecionando de forma segura para o Mercado Pago...</h2></body>
+                </html>
+            `);
+            setMpWindowRef(mpTab);
+        }
 
         try {
             const res = await fetch("/api/checkout/upgrade", {
@@ -18,16 +55,49 @@ export function UpgradeButton({ userId }: { userId?: string }) {
             const data = await res.json();
 
             if (data.url) {
-                // Redireciona a janela atual para o Mercado Pago
-                window.location.href = data.url;
+                if (mpTab) {
+                    mpTab.location.href = data.url;
+                } else {
+                    const newTab = window.open(data.url, "_blank");
+                    setMpWindowRef(newTab);
+                }
+                setIsSent(true);
             } else {
+                if (mpTab) mpTab.close();
+                setMpWindowRef(null);
                 alert("Erro ao gerar link de pagamento. Tente novamente.");
                 setIsLoading(false);
             }
         } catch {
+            if (mpTab) mpTab.close();
+            setMpWindowRef(null);
             alert("Erro de conexão. Tente novamente.");
             setIsLoading(false);
         }
+    }
+
+    if (isSent) {
+        return (
+            <div className="flex flex-col items-center justify-center p-6 bg-slate-900/50 rounded-xl border border-amber-500/30 text-center animate-in fade-in duration-500 w-full shadow-lg">
+                <Loader2 className="w-10 h-10 text-amber-500 animate-spin mb-4" />
+                <h3 className="text-white font-bold mb-2">Aguardando Pagamento</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                    Uma nova tela do Mercado Pago foi aberta para você concluir sua compra de forma segura.
+                    <br /><br />
+                    Estamos aguardando a confirmação do PIX ou Cartão. O QR Code sumirá sozinho e esta tela será atualizada automaticamente!
+                </p>
+                <button
+                    onClick={() => {
+                        setIsSent(false);
+                        setIsLoading(false);
+                        setMpWindowRef(null);
+                    }}
+                    className="mt-6 text-sm underline text-slate-500 hover:text-white transition-colors"
+                >
+                    Cancelar ou tentar novamente
+                </button>
+            </div>
+        );
     }
 
     return (
