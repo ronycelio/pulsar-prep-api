@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import DashboardCategoryClient from "./DashboardCategoryClient";
+import { UpgradeButton } from "@/components/UpgradeButton";
 
 interface Props {
     params: Promise<{ track: string; level: string }>;
@@ -44,7 +45,16 @@ export default async function DashboardCategoryPage({ params }: Props) {
     // Isso engloba tanto os assinantes 'enem' quanto os usuários novos 'free'
     if (track === "vestibular" && dbUser?.plan !== "full") {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+
+                {/* Back Link */}
+                <div className="absolute top-8 left-8">
+                    <a href="/dashboard" className="text-slate-400 hover:text-white flex items-center gap-2 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                        Voltar ao Painel
+                    </a>
+                </div>
+
                 <div className="bg-background/80 backdrop-blur-sm border-2 border-border p-8 rounded-2xl max-w-md w-full shadow-xl">
                     <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                         <span className="text-3xl text-primary font-bold">🔒</span>
@@ -53,13 +63,10 @@ export default async function DashboardCategoryPage({ params }: Props) {
                     <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
                         O acesso à trilha de Vestibular / Medicina e provas como a FUVEST faz parte do nosso <strong className="text-foreground">Plano Completo</strong>.
                     </p>
-                    <a
-                        href="/paywall"
-                        className="flex items-center justify-center w-full px-6 py-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold transition-all shadow-md hover:shadow-lg active:scale-95"
-                    >
-                        Ver Opções de Atualização (Planos)
-                    </a>
-                    <p className="text-xs text-muted-foreground mt-4">Libere milhares de questões avançadas focadas nas maiores bancas do país.</p>
+
+                    <UpgradeButton />
+
+                    <p className="text-xs text-muted-foreground mt-4">Libere milhares de questões avançadas focadas nas maiores bancas do país. Pagamento via Mercado Pago.</p>
                 </div>
             </div>
         );
