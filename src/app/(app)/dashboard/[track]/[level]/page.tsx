@@ -64,7 +64,7 @@ export default async function DashboardCategoryPage({ params }: Props) {
                         O acesso à trilha de Vestibular / Medicina e provas como a FUVEST faz parte do nosso <strong className="text-foreground">Plano Completo</strong>.
                     </p>
 
-                    <UpgradeButton />
+                    <UpgradeButton userId={session.user.id} />
 
                     <p className="text-xs text-muted-foreground mt-4">Libere milhares de questões avançadas focadas nas maiores bancas do país. Pagamento via Mercado Pago.</p>
                 </div>
