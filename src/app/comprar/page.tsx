@@ -31,15 +31,9 @@ function ComprarForm() {
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showSpamWarning, setShowSpamWarning] = useState(false);
 
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError("Insira um e-mail válido.");
-            return;
-        }
-
+    async function proceedToPayment() {
         setIsLoading(true);
         setError(null);
 
@@ -56,16 +50,76 @@ function ComprarForm() {
                 window.location.href = data.url;
             } else {
                 setError("Erro ao gerar link de pagamento. Tente novamente.");
+                setIsLoading(false);
+                setShowSpamWarning(false);
             }
         } catch {
             setError("Erro de conexão. Tente novamente.");
-        } finally {
             setIsLoading(false);
+            setShowSpamWarning(false);
         }
     }
 
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setError("Insira um e-mail válido.");
+            return;
+        }
+
+        // Intercepta e mostra o aviso de SPAM antes de ir pro MP
+        if (!showSpamWarning) {
+            setShowSpamWarning(true);
+            return;
+        }
+
+        proceedToPayment(); // (This fallback shouldn't be reached if button is hidden, but good to have)
+    }
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950 flex flex-col items-center justify-center p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950 flex flex-col items-center justify-center p-6 relative">
+
+            {/* Modal de Aviso de Spam (Sobreposto à tela inteira) */}
+            {showSpamWarning && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
+                    <div className="bg-slate-900 border border-amber-500/30 rounded-2xl w-full max-w-sm p-6 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+                        <div className="w-16 h-16 bg-amber-500/20 text-amber-500 rounded-full flex items-center justify-center mb-4">
+                            <Mail className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Aviso Importante!</h3>
+                        <p className="text-slate-300 text-sm mb-6 leading-relaxed">
+                            Sua senha de acesso inicial será enviada para o e-mail: <br />
+                            <strong className="text-white block mt-1">{email}</strong>
+                        </p>
+                        <div className="bg-amber-950/40 border border-amber-500/20 rounded-lg p-4 mb-6">
+                            <p className="text-amber-400 text-sm font-medium">
+                                ⚠️ Fique de olho na sua pasta de <strong className="text-amber-300">SPAM</strong> ou <strong className="text-amber-300">Promoções</strong> após o pagamento. Pode demorar alguns instantes.
+                            </p>
+                        </div>
+
+                        <div className="w-full space-y-3">
+                            <button
+                                type="button"
+                                onClick={proceedToPayment}
+                                disabled={isLoading}
+                                className="w-full flex items-center justify-center gap-2 rounded-lg bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold py-3.5 transition-colors disabled:opacity-60"
+                            >
+                                {isLoading ? "Processando..." : "Entendi, ir para o pagamento →"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowSpamWarning(false)}
+                                disabled={isLoading}
+                                className="w-full flex items-center justify-center gap-2 rounded-lg bg-transparent hover:bg-white/5 text-slate-400 font-medium py-2 transition-colors disabled:opacity-60"
+                            >
+                                Voltar para corrigir o e-mail
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Logo */}
             <div className="mb-8 flex flex-col items-center gap-3">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-600 shadow-lg shadow-purple-900/50">
@@ -93,23 +147,26 @@ function ComprarForm() {
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">
-                            <Mail className="inline h-4 w-4 mr-1.5 text-purple-400" />
+                    {/* Campo de e-mail */}
+                    <div className="space-y-3">
+                        <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-violet-400" />
                             Seu melhor e-mail
                         </label>
                         <input
                             type="email"
+                            required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="voce@email.com"
-                            required
-                            className="w-full rounded-lg border border-white/15 bg-white/10 px-4 py-3 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition"
+                            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                         />
-                        <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
-                            <Lock className="h-3 w-3" />
-                            Usamos seu e-mail apenas para enviar sua chave de acesso após o pagamento.
-                        </p>
+                        <div className="flex gap-2">
+                            <Lock className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                Usamos seu e-mail apenas para enviar sua chave de acesso após o pagamento.
+                            </p>
+                        </div>
                     </div>
 
                     {error && (
@@ -120,17 +177,10 @@ function ComprarForm() {
 
                     <button
                         type="submit"
-                        disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-semibold py-3.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-purple-900/40"
+                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-semibold py-3.5 transition-colors shadow-lg shadow-purple-900/40"
                     >
-                        {isLoading ? (
-                            <span className="animate-pulse">Redirecionando...</span>
-                        ) : (
-                            <>
-                                Ir para o Pagamento
-                                <ArrowRight className="h-4 w-4" />
-                            </>
-                        )}
+                        Ir para o Pagamento
+                        <ArrowRight className="h-4 w-4" />
                     </button>
                 </form>
 
