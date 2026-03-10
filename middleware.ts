@@ -5,13 +5,15 @@ import { auth } from "@/lib/auth";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase());
 
 export const config = {
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login|register|paywall).*)"],
+    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login|register|paywall|comprar|change-password).*)"],
 };
 
 export default auth((req) => {
     const isLoggedIn = !!req.auth;
     const pathname = req.nextUrl.pathname;
     const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
+    const isPublicPage = pathname.startsWith("/comprar") || pathname.startsWith("/change-password");
+    if (isPublicPage) return NextResponse.next();
 
     // ── Auth check ──────────────────────────────────────────────────────────
     if (isAuthPage) {
