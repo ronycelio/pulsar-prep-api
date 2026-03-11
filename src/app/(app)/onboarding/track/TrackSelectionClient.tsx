@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, BookOpen } from "lucide-react";
+import { PwaInstallModal } from "@/components/pwa/PwaInstallModal";
 
 interface TrackSelectionClientProps {
     userName: string;
@@ -77,6 +78,9 @@ export default function TrackSelectionClient({ userName, isFirstTime }: TrackSel
                 </Button>
 
             </CardContent>
+
+            {/* Modal de Instalação PWA escondido (só aparece se isFirstTime) */}
+            <PwaInstallModal isFirstTime={isFirstTime} />
         </Card>
     );
 }

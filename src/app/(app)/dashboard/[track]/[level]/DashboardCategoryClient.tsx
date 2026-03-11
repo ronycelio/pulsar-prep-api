@@ -3,7 +3,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, buildCategoryKey } from "@/lib/db";
 import { useOnboardingStore } from "@/stores/onboardingStore";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
@@ -22,9 +22,9 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-    Flame, PlayCircle, Loader2, RotateCcw, ArrowLeft,
-    BookOpen, Target, CheckCircle2,
-    LayoutDashboard, BarChart3, ListFilter
+    Flame, PlayCircle, Loader2, RotateCcw,
+    BookOpen, Target, CheckCircle2, Star,
+    LayoutDashboard, BarChart3, ListFilter, Zap
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -55,6 +55,7 @@ export default function DashboardCategoryClient({ userId, track, level, trackLab
     const [resetConfirmText, setResetConfirmText] = useState("");
     const [isResetting, setIsResetting] = useState(false);
     const [localGoal, setLocalGoal] = useState<number>(5);
+    const celebrationShownRef = useRef(false);
 
     const categoryKey = useMemo(() => buildCategoryKey(track, level), [track, level]);
     const maxGoal = MAX_GOAL[level] ?? 10;
@@ -116,6 +117,30 @@ export default function DashboardCategoryClient({ userId, track, level, trackLab
     const goalTotal = localGoal;
     const streakDay = dailyState?.streakDay ?? 0;
     const accuracy = totalAnswered ? Math.round(((totalCorrect ?? 0) / totalAnswered) * 100) : 0;
+
+    // ── Toast de celebração de streak (mostra uma vez por dia por categoria) ──
+    useEffect(() => {
+        if (!dailyState?.goalReached || celebrationShownRef.current) return;
+        const storageKey = `streak_celebrated_${categoryKey}_${todayStr}`;
+        if (typeof window !== "undefined" && !localStorage.getItem(storageKey)) {
+            celebrationShownRef.current = true;
+            localStorage.setItem(storageKey, "1");
+            const streak = dailyState.streakDay ?? 0;
+            setTimeout(() => {
+                toast.success(
+                    streak >= 7
+                        ? `🔥 ${streak} dias consecutivos! Você é imparável!`
+                        : streak >= 3
+                        ? `🔥 ${streak} dias seguidos! Continue acendendo!`
+                        : `🎯 Meta de hoje concluída! ${streak > 0 ? `Ofensiva: ${streak} dia${streak > 1 ? 's' : ''}` : 'Bom trabalho!'}`,
+                    {
+                        description: "Seu progresso foi salvo. Volte amanhã para manter a ofensiva!",
+                        duration: 5000,
+                    }
+                );
+            }, 600);
+        }
+    }, [dailyState?.goalReached, dailyState?.streakDay, categoryKey, todayStr]);
 
     const handleSliderChange = (vals: number[]) => {
         setLocalGoal(vals[0]);
@@ -248,17 +273,22 @@ export default function DashboardCategoryClient({ userId, track, level, trackLab
                 <TabsContent value="inicio" className="animate-in fade-in duration-500">
                     {/* Stats Cards */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                        <Card>
+                        <Card className={isGoalDone ? "border-emerald-500/40 bg-emerald-500/5" : ""}>
                             <CardHeader className="pb-1 pt-4 px-4">
                                 <CardTitle className="text-xs text-muted-foreground font-medium">Meta Hoje</CardTitle>
                             </CardHeader>
                             <CardContent className="px-4 pb-4">
-                                <div className="text-2xl font-black">{goalCompleted} <span className="text-muted-foreground text-base font-normal">/ {goalTotal}</span></div>
-                                {isGoalDone && <Badge className="mt-1 text-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/30"><CheckCircle2 className="h-3 w-3 mr-1" />Concluída!</Badge>}
+                                <div className={`text-2xl font-black ${isGoalDone ? "text-emerald-500" : ""}`}>
+                                    {goalCompleted} <span className="text-muted-foreground text-base font-normal">/ {goalTotal}</span>
+                                </div>
+                                {isGoalDone
+                                    ? <Badge className="mt-1 text-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/30"><CheckCircle2 className="h-3 w-3 mr-1" />Concluída! ✓</Badge>
+                                    : goalCompleted > 0 && <Badge variant="outline" className="mt-1 text-xs">{Math.round((goalCompleted / goalTotal) * 100)}% feito</Badge>
+                                }
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className={streakDay > 0 ? "border-orange-500/40" : ""}>
                             <CardHeader className="pb-1 pt-4 px-4">
                                 <CardTitle className="text-xs text-muted-foreground font-medium flex items-center gap-1">
                                     <Flame className={`h-3 w-3 ${streakDay > 0 ? "text-orange-500" : ""}`} />
@@ -269,6 +299,7 @@ export default function DashboardCategoryClient({ userId, track, level, trackLab
                                 <div className={`text-2xl font-black ${streakDay > 0 ? "text-orange-500" : ""}`}>
                                     {streakDay} <span className="text-base font-normal text-muted-foreground">dias</span>
                                 </div>
+                                {streakDay >= 3 && <p className="text-xs text-orange-500/70 font-medium">{streakDay >= 7 ? "🔥 Imparável!" : streakDay >= 5 ? "⚡ Em chamas!" : "🔥 Continue!"}</p>}
                             </CardContent>
                         </Card>
 
@@ -303,13 +334,19 @@ export default function DashboardCategoryClient({ userId, track, level, trackLab
                     {goalTotal > 0 && (
                         <div className="mb-6">
                             <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                                <span>Progresso de hoje</span>
-                                <span>{progressPercent}%</span>
+                                <span className="font-medium">Progresso de hoje</span>
+                                <span className={isGoalDone ? "text-emerald-500 font-bold" : ""}>{
+                                    isGoalDone ? "✓ Meta batida!" : `${progressPercent}%`
+                                }</span>
                             </div>
-                            <div className="w-full bg-muted rounded-full h-2.5">
+                            <div className="w-full bg-muted rounded-full h-3">
                                 <div
-                                    className="bg-primary h-2.5 rounded-full transition-all duration-500"
-                                    style={{ width: `${progressPercent}%` }}
+                                    className={`h-3 rounded-full transition-all duration-700 ${
+                                        isGoalDone
+                                            ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                                            : "bg-primary"
+                                    }`}
+                                    style={{ width: `${Math.min(progressPercent, 100)}%` }}
                                 />
                             </div>
                         </div>
@@ -340,18 +377,22 @@ export default function DashboardCategoryClient({ userId, track, level, trackLab
                     </Card>
 
                     {/* CTA + Reset */}
-                    <Card className="bg-primary/5 border-primary/20">
+                    <Card className={isGoalDone ? "bg-emerald-500/5 border-emerald-500/20" : "bg-primary/5 border-primary/20"}>
                         <CardContent className="p-6">
                             <Button
                                 size="lg"
-                                className="w-full h-14 text-lg font-bold shadow-md hover:shadow-primary/30 mb-4"
+                                className={`w-full h-14 text-lg font-bold shadow-md mb-4 ${
+                                    isGoalDone
+                                        ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 border-0"
+                                        : "hover:shadow-primary/30"
+                                }`}
                                 onClick={handleStartStudy}
                                 disabled={isGenerating}
                             >
                                 {isGenerating ? (
                                     <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando Sessão...</>
                                 ) : isGoalDone ? (
-                                    <><PlayCircle className="mr-2 h-6 w-6" /> Treino Extra (Revisão)</>
+                                    <><Zap className="mr-2 h-6 w-6" /> Treino Extra (Bombar Mais!)</>
                                 ) : goalCompleted > 0 ? (
                                     <><PlayCircle className="mr-2 h-6 w-6" /> Continuar Meta ({goalCompleted}/{goalTotal})</>
                                 ) : (

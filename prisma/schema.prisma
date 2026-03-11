@@ -30,6 +30,7 @@ model User {
   accounts        Account[]
   sessions        Session[]
   progress        ProgressEntry[]
+  dailyStates     DailyState[]
 
   @@map("users")
 }
@@ -100,4 +101,23 @@ model ProcessedTransaction {
   processedAt    DateTime @default(now()) @map("processed_at")
 
   @@map("processed_transactions")
+}
+
+// Persiste estado diário de estudo (streak, meta) para sync cross-device
+model DailyState {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  categoryKey    String   @map("category_key")
+  date           String   // "YYYY-MM-DD"
+  goalTotal      Int      @map("goal_total")
+  goalCompleted  Int      @map("goal_completed")
+  goalReached    Boolean  @default(false) @map("goal_reached")
+  streakDay      Int      @default(0) @map("streak_day")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryKey, date])
+  @@map("daily_states")
 }

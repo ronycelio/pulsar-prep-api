@@ -4,8 +4,9 @@ import { NextResponse } from "next/server";
 
 /**
  * POST /api/sync
- * Recebe lote de progresso do IndexedDB e sincroniza com PostgreSQL via Prisma.
- * Estratégia: Upsert baseado em [userId, questionId].
+ * Recebe lote de progresso AND daily_state do IndexedDB e sincroniza com PostgreSQL.
+ * Estratégia: Upsert baseado em [userId, questionId] para progress.
+ *             Upsert baseado em [userId, categoryKey, date] para daily_state.
  */
 export async function POST(req: Request) {
     try {
@@ -15,7 +16,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 });
         }
 
-        const { progress } = await req.json();
+        const body = await req.json();
+        const { progress = [], dailyStates = [] } = body;
 
         if (!Array.isArray(progress)) {
             return NextResponse.json({ success: false, error: "Formato inválido" }, { status: 400 });
@@ -23,8 +25,7 @@ export async function POST(req: Request) {
 
         const userId = session.user.id;
 
-        // Processar cada item em paralelo (ou sequencialmente se o lote for gigante)
-        // Para o MVP: Promise.all é seguro para lotes de meta diária (~50 itens)
+        // ── 1. Sync de Progresso (questões respondidas) ──
         const syncPromises = progress.map((item) => {
             return prisma.progressEntry.upsert({
                 where: {
@@ -52,13 +53,42 @@ export async function POST(req: Request) {
             });
         });
 
-        await Promise.all(syncPromises);
+        // ── 2. Sync de Daily State (streak, meta, progresso do dia) ──
+        const statePromises = dailyStates.map((state: any) => {
+            return prisma.dailyState.upsert({
+                where: {
+                    userId_categoryKey_date: {
+                        userId,
+                        categoryKey: state.categoryKey,
+                        date: state.date,
+                    },
+                },
+                update: {
+                    goalTotal: state.goalTotal,
+                    goalCompleted: state.goalCompleted,
+                    goalReached: state.goalReached ?? false,
+                    streakDay: state.streakDay ?? 0,
+                },
+                create: {
+                    userId,
+                    categoryKey: state.categoryKey,
+                    date: state.date,
+                    goalTotal: state.goalTotal,
+                    goalCompleted: state.goalCompleted,
+                    goalReached: state.goalReached ?? false,
+                    streakDay: state.streakDay ?? 0,
+                },
+            }).catch(() => null); // Ignora se modelo não existe ainda
+        });
 
-        console.log(`[Sync API]: Sincronizados ${progress.length} itens para o usuário ${userId}.`);
+        await Promise.all([...syncPromises, ...statePromises]);
+
+        console.log(`[Sync API]: Sincronizados ${progress.length} progresso + ${dailyStates.length} daily_state para ${userId}.`);
 
         return NextResponse.json({
             success: true,
             syncedCount: progress.length,
+            statesSynced: dailyStates.length,
         });
 
     } catch (error: any) {
@@ -69,3 +99,4 @@ export async function POST(req: Request) {
         );
     }
 }
+

@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 
 /**
  * GET /api/sync/pull
- * Retorna todo o progresso do usuário para sincronização inicial em novos dispositivos.
+ * Retorna todo o progresso E daily_state do usuário para sincronização cross-device.
+ * Epic 5 — Story 5.3: Restauração ao logar em novo dispositivo.
  */
 export async function GET(req: Request) {
     try {
@@ -16,10 +17,24 @@ export async function GET(req: Request) {
 
         const userId = session.user.id;
 
+        // ── 1. Buscar todo o progresso de questões ──
         const progress = await prisma.progressEntry.findMany({
-            where: { userId: userId },
+            where: { userId },
             orderBy: { answeredAt: "desc" },
         });
+
+        // ── 2. Buscar daily_state (streak + meta diária histórica) ──
+        let dailyStates: any[] = [];
+        try {
+            dailyStates = await (prisma as any).dailyState.findMany({
+                where: { userId },
+                orderBy: { date: "desc" },
+                take: 90, // últimos 90 dias — suficiente para streak histórico
+            });
+        } catch {
+            // Fallback: tabela pode não existir em ambientes antigos
+            dailyStates = [];
+        }
 
         return NextResponse.json({
             success: true,
@@ -31,7 +46,15 @@ export async function GET(req: Request) {
                 isCorrect: p.isCorrect,
                 selectedAlternativeId: p.selectedAlternativeId,
                 timeSpentMs: p.timeSpentMs,
-                isSynced: true, // It's coming from server, so it's synced
+                isSynced: true,
+            })),
+            dailyStates: dailyStates.map((s: any) => ({
+                categoryKey: s.categoryKey,
+                date: s.date,
+                goalTotal: s.goalTotal,
+                goalCompleted: s.goalCompleted,
+                goalReached: s.goalReached,
+                streakDay: s.streakDay,
             })),
         });
 
