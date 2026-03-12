@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { loginAction } from "@/lib/actions/auth";
 import { SyncQueue } from "@/lib/sync/syncQueue";
+import { Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,8 @@ const formSchema = z.object({
 export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [errorStatus, setErrorStatus] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -38,6 +41,13 @@ export default function LoginPage() {
             }
             if (params.get("reason") === "session_mismatch") {
                 setErrorStatus("Você foi desconectado porque sua conta foi acessada em outro dispositivo.");
+            }
+
+            // Restore "remember me" email
+            const savedEmail = localStorage.getItem("pulsar_remembered_email");
+            if (savedEmail) {
+                form.setValue("email", savedEmail);
+                setRememberMe(true);
             }
         }
     }, []);
@@ -61,6 +71,13 @@ export default function LoginPage() {
                 // Conta criada via Webhook — força troca de senha antes de entrar no app
                 router.push(`/change-password?email=${encodeURIComponent(values.email)}`);
             } else {
+                // Save or clear remember me
+                if (rememberMe) {
+                    localStorage.setItem("pulsar_remembered_email", values.email);
+                } else {
+                    localStorage.removeItem("pulsar_remembered_email");
+                }
+
                 // Sincronizar dados do servidor após login (Recuperação Cross-Device)
                 await SyncQueue.pullFromServer();
                 router.push("/onboarding/track"); // Flow de Boas Vindas Diárias
@@ -108,22 +125,50 @@ export default function LoginPage() {
                         <div className="flex items-center justify-between">
                             <Label htmlFor="password">Senha</Label>
                             <Link
-                                href="#"
+                                href="/forgot-password"
                                 className="text-sm text-muted-foreground underline-offset-4 hover:underline"
                             >
                                 Esqueceu a senha?
                             </Link>
                         </div>
-                        <Input
-                            id="password"
-                            type="password"
-                            {...form.register("password")}
-                        />
+                        <div className="relative">
+                            <Input
+                                id="password"
+                                type={showPassword ? "text" : "password"}
+                                className="pr-10"
+                                {...form.register("password")}
+                            />
+                            <button
+                                type="button"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                ) : (
+                                    <Eye className="h-4 w-4" />
+                                )}
+                            </button>
+                        </div>
                         {form.formState.errors.password && (
                             <p className="text-sm text-destructive">
                                 {form.formState.errors.password.message}
                             </p>
                         )}
+                    </div>
+
+                    {/* Remember me */}
+                    <div className="flex items-center space-x-2 pb-1 pt-1">
+                        <input
+                            type="checkbox"
+                            id="rememberMe"
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary"
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
+                        />
+                        <Label htmlFor="rememberMe" className="text-sm font-normal cursor-pointer text-muted-foreground">
+                            Lembrar meu e-mail
+                        </Label>
                     </div>
                     <Button type="submit" className="w-full" disabled={isLoading}>
                         {isLoading ? "Entrando..." : "Entrar"}

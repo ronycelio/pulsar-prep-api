@@ -44,36 +44,36 @@ export default function TrackSelectionClient({ userName, isFirstTime }: TrackSel
                 {/* ENEM */}
                 <Button
                     variant="outline"
-                    className="w-full h-28 text-lg justify-start px-6 border-2 hover:border-blue-500 hover:bg-blue-500/5 group transition-all duration-200"
+                    className="w-full min-h-[7rem] h-auto whitespace-normal text-lg justify-start px-6 border-2 hover:border-blue-500 hover:bg-blue-500/5 group transition-all duration-200"
                     onClick={() => handleSelect("enem")}
                 >
-                    <div className="bg-blue-500/10 p-3 rounded-full mr-4 group-hover:bg-blue-500/20 transition-colors">
+                    <div className="bg-blue-500/10 p-3 rounded-full mr-4 group-hover:bg-blue-500/20 transition-colors shrink-0">
                         <GraduationCap className="h-7 w-7 text-blue-500" />
                     </div>
-                    <div className="flex flex-col items-start">
+                    <div className="flex flex-col items-start py-2">
                         <span className="font-bold text-blue-500 text-xl">ENEM</span>
-                        <span className="text-sm font-normal text-muted-foreground text-left">
+                        <span className="text-sm font-normal text-muted-foreground text-left mt-1">
                             Exame Nacional do Ensino Médio.
                         </span>
-                        <span className="text-xs text-blue-500/70 mt-1">Matemática · Humanas · Natureza · Linguagens</span>
+                        <span className="text-xs text-blue-500/70 mt-2">Matemática · Humanas · Natureza · Linguagens</span>
                     </div>
                 </Button>
 
                 {/* Vestibular */}
                 <Button
                     variant="outline"
-                    className="w-full h-28 text-lg justify-start px-6 border-2 hover:border-primary hover:bg-primary/5 group transition-all duration-200"
+                    className="w-full min-h-[7rem] h-auto whitespace-normal text-lg justify-start px-6 border-2 hover:border-primary hover:bg-primary/5 group transition-all duration-200 mt-4"
                     onClick={() => handleSelect("vestibular")}
                 >
-                    <div className="bg-primary/10 p-3 rounded-full mr-4 group-hover:bg-primary/20 transition-colors">
+                    <div className="bg-primary/10 p-3 rounded-full mr-4 group-hover:bg-primary/20 transition-colors shrink-0">
                         <BookOpen className="h-7 w-7 text-primary" />
                     </div>
-                    <div className="flex flex-col items-start">
+                    <div className="flex flex-col items-start py-2">
                         <span className="font-bold text-primary text-xl">Vestibular</span>
-                        <span className="text-sm font-normal text-muted-foreground text-left">
+                        <span className="text-sm font-normal text-muted-foreground text-left mt-1">
                             FUVEST, UNICAMP, UERJ e regionais.
                         </span>
-                        <span className="text-xs text-primary/70 mt-1">Inclui VestMed · Bio · Fis · Qui · Mat · Port · Hist</span>
+                        <span className="text-xs text-primary/70 mt-2 leading-relaxed">Inclui VestMed · Bio · Fis · Qui · Mat · Port · Hist</span>
                     </div>
                 </Button>
 

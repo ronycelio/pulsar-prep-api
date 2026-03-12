@@ -113,7 +113,7 @@ export default function LevelSelectionClient({ isPremium }: { isPremium?: boolea
                         <Button
                             key={lvl.value}
                             variant="outline"
-                            className={`w-full h-20 justify-start px-4 border-2 transition-all duration-200
+                            className={`w-full min-h-[5rem] h-auto whitespace-normal justify-start px-4 py-3 border-2 transition-all duration-200
                                 ${isLocked ? "opacity-60 bg-muted/50 grayscale-[0.5] hover:bg-muted/50 cursor-not-allowed" : ""}
                                 ${hasProgress && !isLocked
                                     ? `${lvl.activeClass} bg-opacity-5`
@@ -121,22 +121,22 @@ export default function LevelSelectionClient({ isPremium }: { isPremium?: boolea
                                 }`}
                             onClick={() => handleSelect(lvl.value)}
                         >
-                            <div className={`mr-4 ${hasProgress && !isLocked ? lvl.activeClass.split(" ")[1] : "text-muted-foreground"}`}>
+                            <div className={`mr-4 shrink-0 mt-1 self-start ${hasProgress && !isLocked ? lvl.activeClass.split(" ")[1] : "text-muted-foreground"}`}>
                                 {isLocked ? <Lock className="h-6 w-6 text-muted-foreground/70" /> : lvl.icon}
                             </div>
-                            <div className="flex flex-col items-start flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={`font-semibold ${hasProgress && !isLocked ? lvl.activeClass.split(" ")[1] : ""}`}>
+                            <div className="flex flex-col items-start flex-1 min-w-0 pb-1">
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                    <span className={`font-semibold text-base leading-tight ${hasProgress && !isLocked ? lvl.activeClass.split(" ")[1] : ""}`}>
                                         {lvl.label}
                                     </span>
                                     {hasProgress && (
-                                        <Badge className="text-xs px-2 py-0 h-5 bg-primary/10 text-primary border border-primary/30 flex items-center gap-1">
-                                            <CheckCircle2 className="h-3 w-3" />
-                                            Em Andamento
+                                        <Badge className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border border-primary/30 flex items-center gap-1">
+                                            <CheckCircle2 className="h-2.5 w-2.5" />
+                                            Andamento
                                         </Badge>
                                     )}
                                 </div>
-                                <span className="text-xs text-muted-foreground">{lvl.sub}</span>
+                                <span className="text-xs leading-relaxed text-muted-foreground text-left">{lvl.sub}</span>
                             </div>
                         </Button>
                     );
