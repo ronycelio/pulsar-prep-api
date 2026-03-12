@@ -3,7 +3,7 @@
     "name": "Pulsar Prep",
     "short_name": "Pulsar Prep",
     "description": "Seu preparador ENEM/FUVEST inteligente, offline-first.",
-    "start_url": "/?mode=pwa",
+    "start_url": "/",
     "display": "standalone",
     "background_color": "#09090b",
     "theme_color": "#09090b",

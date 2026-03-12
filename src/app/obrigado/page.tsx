@@ -1,11 +1,12 @@
 import { MailCheck, ArrowRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
-export default function ObrigadoPage({
-    searchParams,
-}: {
-    searchParams: { status?: string };
-}) {
+export default async function ObrigadoPage(
+    props: {
+        searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+    }
+) {
+    const searchParams = await props.searchParams;
     const isPending = searchParams.status === "pending";
 
     return (
