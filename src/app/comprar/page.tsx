@@ -8,7 +8,7 @@ import { Suspense } from "react";
 const PLANS: Record<string, { name: string; price: string; features: string[] }> = {
     enem: {
         name: "Licença ENEM",
-        price: "R$ 79,00",
+        price: "R$ 97,99",
         features: ["Acesso vitalício", "Todas as edições do ENEM", "Motor de estudo inteligente"],
     },
     full: {
@@ -184,7 +184,7 @@ function ComprarForm() {
                         }`}
                     >
                         <h3 className="text-white font-bold mb-1">ENEM</h3>
-                        <p className="text-2xl font-extrabold text-white mb-3">R$ 79,00</p>
+                        <p className="text-2xl font-extrabold text-white mb-3">R$ 97,99</p>
                         <ul className="space-y-1.5 mb-2">
                             {PLANS.enem.features.map(f => (
                                 <li key={f} className="text-xs text-slate-400 flex items-start gap-2">

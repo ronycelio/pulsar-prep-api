@@ -2,7 +2,7 @@ import { MercadoPagoConfig, Preference } from "mercadopago";
 import { NextRequest, NextResponse } from "next/server";
 
 const PLANS: Record<string, { title: string; real: number; test: number }> = {
-    enem: { title: "Pulsar Prep - Licença ENEM", real: 79.00, test: 1.00 },
+    enem: { title: "Pulsar Prep - Licença ENEM", real: 97.99, test: 1.00 },
     full: { title: "Pulsar Prep - Licença Completa (ENEM + Vestibular)", real: 129.00, test: 1.10 },
     upgrade: { title: "Pulsar Prep - Upgrade Vestibular", real: 32.00, test: 1.10 },
 };

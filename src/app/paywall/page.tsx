@@ -90,7 +90,7 @@ export default async function PaywallPage() {
                             {/* Plano ENEM */}
                             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center bg-background/50 hover:bg-muted/20 transition-colors">
                                 <h4 className="font-bold text-lg mb-1">Plano ENEM</h4>
-                                <div className="text-2xl font-black text-primary mb-2">R$ 79</div>
+                                <div className="text-3xl font-black text-primary mb-2">R$ 97,99</div>
                                 <p className="text-xs text-muted-foreground text-center mb-4 min-h-[40px]">
                                     Acesso vitalício à trilha completa do ENEM (1º, 2º e 3º ano).
                                 </p>

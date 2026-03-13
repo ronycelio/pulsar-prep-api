@@ -22,7 +22,7 @@ export async function createCheckout(plan: "enem" | "full" | "upgrade") {
 
     if (plan === "enem") {
         title = "Plano Prep ENEM";
-        basePrice = 79.00;
+        basePrice = 97.99;
     } else if (plan === "full") {
         title = "Plano Prep Medicina Completo";
         basePrice = 129.00;
