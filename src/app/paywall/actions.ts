@@ -18,17 +18,17 @@ export async function createCheckout(plan: "enem" | "full" | "upgrade") {
     const preference = new Preference(client);
 
     let title = "";
-    let price = 0;
+    let basePrice = 0;
 
     if (plan === "enem") {
         title = "Plano Prep ENEM";
-        price = 1.00;
+        basePrice = 79.00;
     } else if (plan === "full") {
         title = "Plano Prep Medicina Completo";
-        price = 1.10;
+        basePrice = 129.00;
     } else if (plan === "upgrade") {
         title = "Upgrade Medicina";
-        price = 1.10;
+        basePrice = 32.00;
     }
 
     const APP_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
@@ -36,7 +36,8 @@ export async function createCheckout(plan: "enem" | "full" | "upgrade") {
     let checkoutUrl: string | null = null;
 
     try {
-        const isLocalhost = APP_URL.includes("localhost");
+        const isLocalhost = APP_URL.includes("localhost") || process.env.MP_TEST_MODE === "true";
+        const finalPrice = isLocalhost ? 1.00 : basePrice;
 
         const body: any = {
             items: [
@@ -44,7 +45,7 @@ export async function createCheckout(plan: "enem" | "full" | "upgrade") {
                     id: plan,
                     title: title,
                     quantity: 1,
-                    unit_price: price,
+                    unit_price: finalPrice,
                 }
             ],
             external_reference: session.user.id,
