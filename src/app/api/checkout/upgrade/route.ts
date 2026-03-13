@@ -17,8 +17,7 @@ export async function POST(request: NextRequest) {
         const plan = "upgrade";
         const APP_URL = process.env.NEXTAUTH_URL || "https://api.pulsarprep.shop";
 
-        const isTestMode = APP_URL.includes("localhost") || process.env.MP_TEST_MODE === "true";
-        const price = isTestMode ? PLANS.upgrade.test : PLANS.upgrade.real;
+        const price = PLANS.upgrade.real;
 
         const client = new MercadoPagoConfig({
             accessToken: process.env.MP_ACCESS_TOKEN ?? "",

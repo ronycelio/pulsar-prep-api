@@ -36,8 +36,8 @@ export async function createCheckout(plan: "enem" | "full" | "upgrade") {
     let checkoutUrl: string | null = null;
 
     try {
-        const isLocalhost = APP_URL.includes("localhost") || process.env.MP_TEST_MODE === "true";
-        const finalPrice = isLocalhost ? 1.00 : basePrice;
+        const isLocalhost = APP_URL.includes("localhost");
+        const finalPrice = basePrice;
 
         const body: any = {
             items: [

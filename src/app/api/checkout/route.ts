@@ -30,9 +30,8 @@ export async function POST(request: NextRequest) {
         }
 
         const APP_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
-        const isTestMode = APP_URL.includes("localhost") || process.env.MP_TEST_MODE === "true";
         const planConfig = PLANS[plan];
-        const price = isTestMode ? planConfig.test : planConfig.real;
+        const price = planConfig.real;
 
         const client = new MercadoPagoConfig({
             accessToken: process.env.MP_ACCESS_TOKEN ?? "",
